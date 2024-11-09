@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Sistema de Inventario</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../styles/pages/dashboard.css">
+    <link rel="stylesheet" href="../styles/components/modal.css">
+    <link rel="stylesheet" href="../styles/components/buttons.css">
+<link rel="stylesheet" href="../styles/components/alerts.css">
+<link rel="stylesheet" href="../styles/components/forms.css">
+<link rel="stylesheet" href="../styles/components/tables.css">
+<link rel="stylesheet" href="../styles/components/cards.css">
+<link rel="stylesheet" href="../styles/components/navbar.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <h1>Sistema de Inventario</h1>
+            <div class="user-info">
+                <span id="userName">Administrador</span>
+                <button class="btn btn-danger">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <div class="menu">
+            <h3>Menú Principal</h3>
+            <ul>
+                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="inventory.html">Inventario</a></li>
+                <li><a href="reports.html">Reportes</a></li>
+                <li><a href="users.html">Usuarios</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h2>Gestión de Inventario</h2>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalProducts">0</span>
+                    <span class="stat-label">Total Productos</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="lowStock">0</span>
+                    <span class="stat-label">Stock Bajo</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-info">
+                    <span class="stat-value" id="categories">0</span>
+                    <span class="stat-label">Categorías</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar productos...">
+            </div>
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="">Todas las categorías</option>
+                </select>
+                <select id="statusFilter">
+                    <option value="">Todos los estados</option>
+                    <option value="in_stock">En Stock</option>
+                    <option value="low_stock">Stock Bajo</option>
+                    <option value="out_stock">Sin Stock</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                        <th>Ubicación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                    <!-- Los productos se cargarán dinámicamente -->
+                </tbody>
+            </table>
+            <div id="pagination" class="pagination">
+                <!-- La paginación se generará dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="../script/pages/inventory.js"></script>
+</body>
+</html>
