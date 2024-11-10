@@ -2,6 +2,15 @@ const http = require('http');
 const pool = require('./config/database');
 require('dotenv').config();
 
+// Función para validar token
+function validateToken(req) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) return false;
+    
+    const token = authHeader.split(' ')[1]; // Bearer <token>
+    return token && token.startsWith('token-'); // Validación básica
+}
+
 // Middleware para procesar el body de las peticiones
 async function getRequestBody(req) {
     return new Promise((resolve, reject) => {
@@ -23,7 +32,7 @@ const server = http.createServer(async (req, res) => {
     // Configurar headers CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Content-Type', 'application/json');
 
     // Manejar preflight requests
@@ -37,7 +46,6 @@ const server = http.createServer(async (req, res) => {
     const path = url.pathname;
 
     try {
-        
         // Ruta de login
         if (path === '/auth/login' && req.method === 'POST') {
             const body = await getRequestBody(req);
@@ -83,6 +91,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para obtener productos
         else if (path === '/api/products' && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const [products] = await pool.execute(`
                 SELECT p.*, c.name as category_name 
                 FROM products p 
@@ -98,6 +115,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para crear producto
         else if (path === '/api/products' && req.method === 'POST') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const body = await getRequestBody(req);
             
             // Validar datos requeridos
@@ -136,6 +162,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para obtener un producto específico
         else if (path.match(/^\/api\/products\/\d+$/) && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const productId = path.split('/')[3];
             const [products] = await pool.execute(
                 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?',
@@ -159,6 +194,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para eliminar un producto
         else if (path.match(/^\/api\/products\/\d+$/) && req.method === 'DELETE') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const productId = path.split('/')[3];
             
             const [result] = await pool.execute(
@@ -183,6 +227,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para actualizar producto
         else if (path.match(/^\/api\/products\/\d+$/) && req.method === 'PUT') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const productId = path.split('/')[3];
             const body = await getRequestBody(req);
             
@@ -230,6 +283,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para estadísticas del inventario
         else if (path === '/api/inventory/stats' && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const [totalProducts] = await pool.execute('SELECT COUNT(*) as total FROM products');
             const [lowStock] = await pool.execute(
                 'SELECT COUNT(*) as total FROM products WHERE quantity < minimum_stock'
@@ -249,6 +311,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para obtener categorías
         else if (path === '/api/categories' && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const [categories] = await pool.execute('SELECT * FROM categories');
             
             res.writeHead(200);
@@ -260,6 +331,15 @@ const server = http.createServer(async (req, res) => {
 
         // Ruta para productos con bajo stock
         else if (path === '/api/products/low-stock' && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+
             const [products] = await pool.execute(`
                 SELECT p.*, c.name as category_name 
                 FROM products p 
@@ -282,8 +362,6 @@ const server = http.createServer(async (req, res) => {
                 error: 'Ruta no encontrada'
             }));
         }
-
-        
     } catch (error) {
         console.error('Server error:', error);
         res.writeHead(500);

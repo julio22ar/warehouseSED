@@ -8,11 +8,11 @@
     <link rel="stylesheet" href="../styles/pages/dashboard.css">
     <link rel="stylesheet" href="../styles/components/modal.css">
     <link rel="stylesheet" href="../styles/components/buttons.css">
-<link rel="stylesheet" href="../styles/components/alerts.css">
-<link rel="stylesheet" href="../styles/components/forms.css">
-<link rel="stylesheet" href="../styles/components/tables.css">
-<link rel="stylesheet" href="../styles/components/cards.css">
-<link rel="stylesheet" href="../styles/components/navbar.css">
+    <link rel="stylesheet" href="../styles/components/alerts.css">
+    <link rel="stylesheet" href="../styles/components/forms.css">
+    <link rel="stylesheet" href="../styles/components/tables.css">
+    <link rel="stylesheet" href="../styles/components/cards.css">
+    <link rel="stylesheet" href="../styles/components/navbar.css">
 </head>
 <body>
     <nav class="navbar">
@@ -30,9 +30,9 @@
             <h3>Menú Principal</h3>
             <ul>
                 <li><a href="index.html">Dashboard</a></li>
-                <li><a href="inventory.html">Inventario</a></li>
-                <li><a href="reports.html">Reportes</a></li>
-                <li><a href="users.html">Usuarios</a></li>
+                <li><a href="inventory.html" class="active">Inventario</a></li>
+                <li><a href="reports.html" data-permission="VIEW_REPORTS">Reportes</a></li>
+                <li><a href="users.html" data-permission="MANAGE_USERS">Usuarios</a></li>
             </ul>
         </div>
     </aside>
@@ -40,6 +40,9 @@
     <main class="main-content">
         <div class="page-header">
             <h2>Gestión de Inventario</h2>
+            <button class="btn btn-primary" id="addProductBtn" data-permission="ADD_PRODUCT">
+                <span class="btn-icon">➕</span> Agregar Producto
+            </button>
         </div>
 
         <div class="stats-grid">
@@ -102,6 +105,86 @@
             </table>
             <div id="pagination" class="pagination">
                 <!-- La paginación se generará dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Modal para Agregar/Editar Producto -->
+        <div id="productModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Agregar Producto</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <div class="form-group">
+                            <label for="productName">Nombre del Producto</label>
+                            <input type="text" id="productName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="productCategory">Categoría</label>
+                            <select id="productCategory" name="category_id" required>
+                                <!-- Se cargará dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="productQuantity">Cantidad</label>
+                                <input type="number" id="productQuantity" name="quantity" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productMinStock">Stock Mínimo</label>
+                                <input type="number" id="productMinStock" name="minimum_stock" min="0" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="productLocation">Ubicación</label>
+                            <input type="text" id="productLocation" name="location">
+                        </div>
+                        <div class="form-group">
+                            <label for="productDescription">Descripción</label>
+                            <textarea id="productDescription" name="description" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancelProductBtn" data-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" id="saveProductBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación para Eliminar -->
+        <div id="deleteConfirmModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Confirmar Eliminación</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Está seguro que desea eliminar este producto?</p>
+                    <p>Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Detalles del Producto -->
+        <div id="viewProductModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Detalles del Producto</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" id="productDetails">
+                    <!-- Los detalles se cargarán dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
             </div>
         </div>
     </main>

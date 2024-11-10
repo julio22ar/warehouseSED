@@ -7,13 +7,38 @@ export const ROLES = {
     USER: 'user'
 };
 
+
+export const PERMISSIONS = {
+    // Permisos de inventario
+    VIEW_INVENTORY: ['user', 'admin', 'super_admin'],
+    SEARCH_PRODUCTS: ['user', 'admin', 'super_admin'],
+    ADD_PRODUCT: ['admin', 'super_admin'],
+    EDIT_PRODUCT: ['admin', 'super_admin'],
+    DELETE_PRODUCT: ['super_admin'],
+    
+    // Permisos de usuarios
+    VIEW_USERS: ['super_admin'],
+    MANAGE_USERS: ['super_admin'],
+    
+    // Permisos de reportes
+    VIEW_REPORTS: ['admin', 'super_admin'],
+    EXPORT_REPORTS: ['admin', 'super_admin']
+};
+
 export const ROUTES = {
     LOGIN: '/pages/login.html',
     INVENTORY: '/pages/inventory.html',
     REPORTS: '/pages/reports.html',
     USERS: '/pages/users.html',
-    SETTINGS: '/pages/settings.html'
+    DASHBOARD: '/pages/index.html'
 };
+
+export const DEFAULT_ROUTES = {
+    'super_admin': '/pages/index.html',
+    'admin': '/pages/inventory.html',
+    'user': '/pages/inventory.html'
+};
+
 
 export const STATUS = {
     IN_STOCK: 'in_stock',
