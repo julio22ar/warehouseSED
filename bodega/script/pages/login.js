@@ -163,7 +163,7 @@ class LoginPage {
                 
                 // Redirigir según el rol
                 if (data.data.user.role === 'super_admin') {
-                    window.location.href = '../pages/index.html';
+                    window.location.href = '../pages/inventory.html';
                 } else {
                     window.location.href = '../pages/inventory.html';
                 }

@@ -159,7 +159,7 @@ class PermissionsManager {
         // Redirigir según el rol del usuario
         switch (user.role) {
             case 'super_admin':
-                window.location.href = '/pages/index.html';
+                window.location.href = '/pages/inventory.html';
                 break;
             case 'admin':
             case 'user':

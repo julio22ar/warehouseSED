@@ -2,8 +2,7 @@
 const Navigation = {
     routes: {
         login: '/pages/login.html',
-        dashboard: '/pages/dashboard.html',
-        inventory: '/pages/inventory.html',
+        inventory: '/pages/inventory.html',  // Esta será nuestra página principal
         users: '/pages/users.html',
         reports: '/pages/reports.html'
     },
@@ -37,8 +36,8 @@ const Navigation = {
         window.location.href = this.routes.login;
     },
 
-    redirectToDashboard() {
-        window.location.href = this.routes.dashboard;
+    redirectToHome() {           // Cambiado para usar inventory como página principal
+        window.location.href = this.routes.inventory;
     },
 
     redirectToUnauthorized() {
@@ -55,9 +54,9 @@ const Navigation = {
             return;
         }
 
-        // Si está autenticado y está en login, redirigir a dashboard
+        // Si está autenticado y está en login, redirigir a inventory
         if (this.isAuthenticated() && currentPage === this.routes.login) {
-            this.redirectToDashboard();
+            this.redirectToHome();
             return;
         }
     }

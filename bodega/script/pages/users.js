@@ -16,7 +16,7 @@ class UsersPage {
     async init() {
         // Verificar permisos
         if (!Auth.hasPermission('super_admin')) {
-            window.location.href = '/pages/index.html';
+            Auth.redirectToDefaultRoute();  // Cambiado aquí
             return;
         }
 
@@ -169,8 +169,99 @@ class UsersPage {
         return badges[role] || role;
     }
 
-    // ... (métodos auxiliares como escapeHtml, showError, showSuccess)
+    openAddModal() {
+        this.currentUserId = null;
+        document.getElementById('modalTitle').textContent = 'Agregar Usuario';
+        document.getElementById('userForm').reset();
+        this.showModal();
+    }
+
+    openEditModal(user) {
+        this.currentUserId = user.id;
+        document.getElementById('modalTitle').textContent = 'Editar Usuario';
+        
+        // Llenar el formulario con los datos del usuario
+        document.getElementById('username').value = user.username;
+        document.getElementById('name').value = user.name;
+        document.getElementById('role').value = user.role;
+        document.getElementById('password').required = false;
+        
+        this.showModal();
+    }
+
+    showModal() {
+        document.getElementById('userModal').classList.add('show');
+    }
+
+    closeModal() {
+        document.getElementById('userModal').classList.remove('show');
+        document.getElementById('userForm').reset();
+    }
+
+    renderPagination() {
+        const totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        let paginationHtml = '';
+        
+        if (this.currentPage > 1) {
+            paginationHtml += `<button onclick="changePage(${this.currentPage - 1})">&laquo; Anterior</button>`;
+        }
+        
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHtml += `
+                <button 
+                    onclick="changePage(${i})"
+                    class="${i === this.currentPage ? 'active' : ''}"
+                >${i}</button>
+            `;
+        }
+        
+        if (this.currentPage < totalPages) {
+            paginationHtml += `<button onclick="changePage(${this.currentPage + 1})">Siguiente &raquo;</button>`;
+        }
+        
+        pagination.innerHTML = paginationHtml;
+    }
+
+    changePage(page) {
+        this.currentPage = page;
+        this.renderUsers();
+        this.renderPagination();
+    }
+
+    escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    showError(message) {
+        // Implementar mostrar error (podrías usar un sistema de notificaciones)
+        alert(message);
+    }
+
+    showSuccess(message) {
+        // Implementar mostrar éxito
+        alert(message);
+    }
 }
+
+// Exportar funciones necesarias al contexto global para los eventos onclick
+window.editUser = (id) => {
+    const user = window.usersPage.users.find(u => u.id === id);
+    if (user) {
+        window.usersPage.openEditModal(user);
+    }
+};
+
+window.deleteUser = (id) => {
+    window.usersPage.deleteUser(id);
+};
+
+window.changePage = (page) => {
+    window.usersPage.changePage(page);
+};
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', () => {

@@ -30,11 +30,10 @@ export const ROUTES = {
     INVENTORY: '/pages/inventory.html',
     REPORTS: '/pages/reports.html',
     USERS: '/pages/users.html',
-    DASHBOARD: '/pages/index.html'
 };
 
 export const DEFAULT_ROUTES = {
-    'super_admin': '/pages/index.html',
+    'super_admin': '/pages/reports.html',
     'admin': '/pages/inventory.html',
     'user': '/pages/inventory.html'
 };
