@@ -24,14 +24,33 @@ const Auth = {
 
     hasPermission: function(permission) {
         const user = this.getCurrentUser();
-        if (!user) return false;
+        console.log('Current user:', user);
+        console.log('Checking permission:', permission);
+        
+        if (!user) {
+            console.log('No user found');
+            return false;
+        }
 
         // Verificar si el permiso existe en PERMISSIONS
         const permittedRoles = PERMISSIONS[permission];
-        if (!permittedRoles) return false;
+        console.log('Permitted roles:', permittedRoles);
+        
+        if (!permittedRoles) {
+            console.log('No permitted roles found for permission:', permission);
+            return false;
+        }
 
-        // Verificar si el rol del usuario está en los roles permitidos
-        return permittedRoles.includes(user.role);
+        // Si el usuario es super_admin, tiene todos los permisos
+        if (user.role === 'super_admin') {
+            console.log('User is super_admin, granting permission');
+            return true;
+        }
+
+        const hasPermission = permittedRoles.includes(user.role);
+        console.log('Has permission result:', hasPermission);
+        
+        return hasPermission;
     },
 
     hasRole: function(requiredRole) {
@@ -47,7 +66,6 @@ const Auth = {
         const userRoleLevel = roleHierarchy[user.role];
         const requiredRoleLevel = roleHierarchy[requiredRole];
 
-        // Retorna true si el nivel del rol del usuario es mayor o igual al requerido
         return userRoleLevel >= requiredRoleLevel;
     },
 
@@ -77,20 +95,15 @@ const Auth = {
 
     logout: function() {
         try {
-            // Limpiar datos de sesión
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user');
-            
-            // Redirigir a login
             window.location.href = '/pages/login.html';
         } catch (error) {
             console.error('Error during logout:', error);
-            // Asegurar que el usuario sea redirigido incluso si hay un error
             window.location.href = '/pages/login.html';
         }
     },
 
-    // Método para verificar token
     verifyToken: async function() {
         try {
             const token = sessionStorage.getItem('token');
@@ -112,7 +125,6 @@ const Auth = {
         }
     },
 
-    // Método para refrescar datos del usuario
     refreshUserData: async function() {
         try {
             const token = sessionStorage.getItem('token');
@@ -136,22 +148,20 @@ const Auth = {
         }
     },
 
-    // Método para verificar si una ruta es accesible
     canAccessRoute: function(route) {
         const routePermissions = {
             '/pages/inventory.html': 'VIEW_INVENTORY',
             '/pages/reports.html': 'VIEW_REPORTS',
             '/pages/users.html': 'MANAGE_USERS',
-            '/pages/index.html': 'VIEW_INVENTORY' // Dashboard requiere al menos poder ver inventario
+            '/pages/index.html': 'VIEW_INVENTORY'
         };
 
         const requiredPermission = routePermissions[route];
-        if (!requiredPermission) return true; // Si la ruta no tiene permiso definido, se permite
+        if (!requiredPermission) return true;
         
         return this.hasPermission(requiredPermission);
     },
 
-    // Método para manejar errores de autenticación
     handleAuthError: function(error) {
         console.error('Authentication error:', error);
         this.logout();

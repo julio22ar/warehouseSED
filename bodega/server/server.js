@@ -353,7 +353,188 @@ const server = http.createServer(async (req, res) => {
                 data: products
             }));
         }
-
+        else if (path === '/api/users' && req.method === 'GET') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+        
+            try {
+                const [users] = await pool.execute(
+                    'SELECT id, username, name, role, created_at FROM users'
+                );
+                
+                res.writeHead(200);
+                res.end(JSON.stringify({
+                    success: true,
+                    data: users
+                }));
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                res.writeHead(500);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Error al obtener usuarios'
+                }));
+            }
+        }
+        
+        // Ruta para crear usuario
+        else if (path === '/api/users' && req.method === 'POST') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+        
+            const body = await getRequestBody(req);
+            
+            if (!body.username || !body.name || !body.password || !body.role) {
+                res.writeHead(400);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Faltan campos requeridos'
+                }));
+                return;
+            }
+        
+            try {
+                const [result] = await pool.execute(
+                    'INSERT INTO users (username, name, password, role) VALUES (?, ?, ?, ?)',
+                    [body.username, body.name, body.password, body.role]
+                );
+                
+                res.writeHead(201);
+                res.end(JSON.stringify({
+                    success: true,
+                    data: {
+                        id: result.insertId,
+                        username: body.username,
+                        name: body.name,
+                        role: body.role
+                    }
+                }));
+            } catch (error) {
+                if (error.code === 'ER_DUP_ENTRY') {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'El nombre de usuario ya existe'
+                    }));
+                    return;
+                }
+                throw error;
+            }
+        }
+        
+        // Ruta para actualizar usuario
+        else if (path.match(/^\/api\/users\/\d+$/) && req.method === 'PUT') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+        
+            const userId = path.split('/')[3];
+            const body = await getRequestBody(req);
+            
+            if (!body.username || !body.name || !body.role) {
+                res.writeHead(400);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Faltan campos requeridos'
+                }));
+                return;
+            }
+        
+            try {
+                let query = 'UPDATE users SET username = ?, name = ?, role = ?';
+                let params = [body.username, body.name, body.role];
+                
+                if (body.password) {
+                    query += ', password = ?';
+                    params.push(body.password);
+                }
+                
+                query += ' WHERE id = ?';
+                params.push(userId);
+        
+                const [result] = await pool.execute(query, params);
+        
+                if (result.affectedRows === 0) {
+                    res.writeHead(404);
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'Usuario no encontrado'
+                    }));
+                    return;
+                }
+        
+                res.writeHead(200);
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Usuario actualizado exitosamente'
+                }));
+            } catch (error) {
+                if (error.code === 'ER_DUP_ENTRY') {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'El nombre de usuario ya existe'
+                    }));
+                    return;
+                }
+                throw error;
+            }
+        }
+        
+        // Ruta para eliminar usuario
+        else if (path.match(/^\/api\/users\/\d+$/) && req.method === 'DELETE') {
+            if (!validateToken(req)) {
+                res.writeHead(401);
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'No autorizado'
+                }));
+                return;
+            }
+        
+            const userId = path.split('/')[3];
+            
+            try {
+                const [result] = await pool.execute(
+                    'DELETE FROM users WHERE id = ?',
+                    [userId]
+                );
+        
+                if (result.affectedRows === 0) {
+                    res.writeHead(404);
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: 'Usuario no encontrado'
+                    }));
+                    return;
+                }
+        
+                res.writeHead(200);
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Usuario eliminado exitosamente'
+                }));
+            } catch (error) {
+                throw error;
+            }
+        }
         // Ruta no encontrada
         else {
             res.writeHead(404);

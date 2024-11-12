@@ -1,7 +1,6 @@
 // scripts/pages/users.js
 import Auth from '../auth.js';
 import { PERMISSIONS } from '../utils/constants.js';
-import PermissionsManager from '../utils/permissions.js';
 
 class UsersPage {
     constructor() {
@@ -14,14 +13,28 @@ class UsersPage {
     }
 
     async init() {
-        // Verificar permisos
-        if (!Auth.hasPermission('super_admin')) {
-            Auth.redirectToDefaultRoute();  // Cambiado aquí
+        console.log('Starting users page initialization');
+        
+        // Verificar autenticación
+        if (!Auth.isAuthenticated()) {
+            window.location.href = '/pages/login.html';
             return;
         }
 
+        const user = Auth.getCurrentUser();
+        console.log('Current user role:', user?.role);
+
+        // Verificar permisos usando MANAGE_USERS
+        if (!Auth.hasPermission('MANAGE_USERS')) {
+            console.log('User does not have MANAGE_USERS permission');
+            Auth.redirectToDefaultRoute();
+            return;
+        }
+
+        console.log('User has permission, continuing initialization');
+
         // Actualizar nombre de usuario
-        document.getElementById('userName').textContent = Auth.getCurrentUser().name;
+        document.getElementById('userName').textContent = user.name;
 
         // Setup event listeners
         this.setupEventListeners();
@@ -42,13 +55,26 @@ class UsersPage {
         document.getElementById('saveUserBtn')?.addEventListener('click', () => this.handleSaveUser());
         document.querySelector('.modal-close')?.addEventListener('click', () => this.closeModal());
         
-        // Logout
-        document.querySelector('.btn-danger')?.addEventListener('click', () => Auth.logout());
+        // Configurar botones de acción globales
+        window.editUser = (id) => this.openEditModal(this.users.find(u => u.id === id));
+        window.deleteUser = (id) => this.deleteUser(id);
+        window.changePage = (page) => this.changePage(page);
     }
 
     async loadUsers() {
         try {
-            const response = await fetch('http://localhost:3000/api/users');
+            const token = sessionStorage.getItem('token');
+            const response = await fetch('http://localhost:3000/api/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data.success) {
@@ -56,6 +82,8 @@ class UsersPage {
                 this.filteredUsers = [...this.users];
                 this.renderUsers();
                 this.renderPagination();
+            } else {
+                throw new Error(data.message || 'Error loading users');
             }
         } catch (error) {
             console.error('Error loading users:', error);
@@ -63,29 +91,13 @@ class UsersPage {
         }
     }
 
-    handleSearch() {
-        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase();
-        const roleFilter = document.getElementById('roleFilter')?.value;
-
-        this.filteredUsers = this.users.filter(user => {
-            const matchesSearch = user.username.toLowerCase().includes(searchTerm) ||
-                                user.name.toLowerCase().includes(searchTerm);
-            const matchesRole = !roleFilter || user.role === roleFilter;
-
-            return matchesSearch && matchesRole;
-        });
-
-        this.currentPage = 1;
-        this.renderUsers();
-        this.renderPagination();
-    }
-
     async handleSaveUser() {
-        const form = document.getElementById('userForm');
-        const formData = new FormData(form);
-        const userData = Object.fromEntries(formData.entries());
-
         try {
+            const form = document.getElementById('userForm');
+            const formData = new FormData(form);
+            const userData = Object.fromEntries(formData.entries());
+            
+            const token = sessionStorage.getItem('token');
             const url = this.currentUserId 
                 ? `http://localhost:3000/api/users/${this.currentUserId}`
                 : 'http://localhost:3000/api/users';
@@ -95,10 +107,15 @@ class UsersPage {
             const response = await fetch(url, {
                 method,
                 headers: {
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(userData)
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -107,7 +124,7 @@ class UsersPage {
                 await this.loadUsers();
                 this.showSuccess(this.currentUserId ? 'Usuario actualizado' : 'Usuario creado');
             } else {
-                throw new Error(data.error);
+                throw new Error(data.message || 'Error saving user');
             }
         } catch (error) {
             console.error('Error saving user:', error);
@@ -118,9 +135,17 @@ class UsersPage {
     async deleteUser(id) {
         if (confirm('¿Está seguro de eliminar este usuario?')) {
             try {
+                const token = sessionStorage.getItem('token');
                 const response = await fetch(`http://localhost:3000/api/users/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
 
@@ -128,7 +153,7 @@ class UsersPage {
                     await this.loadUsers();
                     this.showSuccess('Usuario eliminado');
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.message || 'Error deleting user');
                 }
             } catch (error) {
                 console.error('Error deleting user:', error);
@@ -160,31 +185,25 @@ class UsersPage {
         `).join('');
     }
 
-    getRoleBadge(role) {
-        const badges = {
-            'super_admin': '<span class="badge badge-primary">Super Admin</span>',
-            'admin': '<span class="badge badge-success">Admin</span>',
-            'user': '<span class="badge badge-info">Usuario</span>'
-        };
-        return badges[role] || role;
-    }
-
     openAddModal() {
         this.currentUserId = null;
         document.getElementById('modalTitle').textContent = 'Agregar Usuario';
         document.getElementById('userForm').reset();
+        document.getElementById('password').required = true;
         this.showModal();
     }
 
     openEditModal(user) {
+        if (!user) return;
+        
         this.currentUserId = user.id;
         document.getElementById('modalTitle').textContent = 'Editar Usuario';
         
-        // Llenar el formulario con los datos del usuario
-        document.getElementById('username').value = user.username;
-        document.getElementById('name').value = user.name;
-        document.getElementById('role').value = user.role;
-        document.getElementById('password').required = false;
+        const form = document.getElementById('userForm');
+        form.username.value = user.username;
+        form.name.value = user.name;
+        form.role.value = user.role;
+        form.password.required = false;
         
         this.showModal();
     }
@@ -198,70 +217,30 @@ class UsersPage {
         document.getElementById('userForm').reset();
     }
 
-    renderPagination() {
-        const totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
-        const pagination = document.getElementById('pagination');
-        
-        let paginationHtml = '';
-        
-        if (this.currentPage > 1) {
-            paginationHtml += `<button onclick="changePage(${this.currentPage - 1})">&laquo; Anterior</button>`;
-        }
-        
-        for (let i = 1; i <= totalPages; i++) {
-            paginationHtml += `
-                <button 
-                    onclick="changePage(${i})"
-                    class="${i === this.currentPage ? 'active' : ''}"
-                >${i}</button>
-            `;
-        }
-        
-        if (this.currentPage < totalPages) {
-            paginationHtml += `<button onclick="changePage(${this.currentPage + 1})">Siguiente &raquo;</button>`;
-        }
-        
-        pagination.innerHTML = paginationHtml;
-    }
-
-    changePage(page) {
-        this.currentPage = page;
-        this.renderUsers();
-        this.renderPagination();
-    }
-
+    // Métodos auxiliares
     escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
     }
 
+    getRoleBadge(role) {
+        const badges = {
+            'super_admin': '<span class="badge badge-primary">Super Admin</span>',
+            'admin': '<span class="badge badge-success">Admin</span>',
+            'user': '<span class="badge badge-info">Usuario</span>'
+        };
+        return badges[role] || role;
+    }
+
     showError(message) {
-        // Implementar mostrar error (podrías usar un sistema de notificaciones)
-        alert(message);
+        alert(message); // Reemplazar con un sistema de notificaciones mejor
     }
 
     showSuccess(message) {
-        // Implementar mostrar éxito
-        alert(message);
+        alert(message); // Reemplazar con un sistema de notificaciones mejor
     }
 }
-
-// Exportar funciones necesarias al contexto global para los eventos onclick
-window.editUser = (id) => {
-    const user = window.usersPage.users.find(u => u.id === id);
-    if (user) {
-        window.usersPage.openEditModal(user);
-    }
-};
-
-window.deleteUser = (id) => {
-    window.usersPage.deleteUser(id);
-};
-
-window.changePage = (page) => {
-    window.usersPage.changePage(page);
-};
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', () => {

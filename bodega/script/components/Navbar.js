@@ -34,6 +34,7 @@ class Navbar {
 
     getMenuItems() {
         const role = this.user?.role;
+        console.log('Role in Navbar:', role); // Agregar este log
         const menuItems = [];
 
         // Menú base para todos los usuarios
@@ -43,10 +44,13 @@ class Navbar {
         if (role === 'super_admin' || role === 'admin') {
             menuItems.push('<a href="/pages/reports.html" class="nav-link">Reportes</a>');
         }
+        if (role === 'super_admin' || role === 'admin') {
+            menuItems.push('<a href="/pages/reports.html" class="nav-link">Reportes</a>');
+        }
 
         if (role === 'super_admin') {
+            console.log('Adding users link for super_admin'); // Agregar este log
             menuItems.push('<a href="/pages/users.html" class="nav-link">Usuarios</a>');
-            menuItems.push('<a href="/pages/settings.html" class="nav-link">Configuración</a>');
         }
 
         return `<div class="nav-links">${menuItems.join('')}</div>`;
