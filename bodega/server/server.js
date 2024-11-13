@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const pool = require('./config/database');
 require('dotenv').config();
+const hashHelper = require('./utils/hashHelper');
 
 // Mapa de tipos MIME
 const MIME_TYPES = {
@@ -94,47 +95,59 @@ const server = http.createServer(async (req, res) => {
         const path = url.pathname;
 
         // Ruta de login
-        if (path === '/auth/login' && req.method === 'POST') {
-            const body = await getRequestBody(req);
-            console.log('Intento de login:', { username: body.username });
+if (path === '/auth/login' && req.method === 'POST') {
+    const body = await getRequestBody(req);
+    
+    try {
+        const [users] = await pool.execute(
+            'SELECT * FROM users WHERE username = ?',
+            [body.username]
+        );
 
-            const [users] = await pool.execute(
-                'SELECT * FROM users WHERE username = ?',
-                [body.username]
-            );
-
-            if (users.length === 0) {
-                res.writeHead(401);
-                res.end(JSON.stringify({
-                    success: false,
-                    error: 'Usuario o contraseña incorrectos'
-                }));
-                return;
-            }
-
-            const user = users[0];
-            if (body.password === user.password) {
-                res.writeHead(200);
-                res.end(JSON.stringify({
-                    success: true,
-                    data: {
-                        user: {
-                            id: user.id,
-                            username: user.username,
-                            name: user.name,
-                            role: user.role
-                        },
-                        token: 'token-' + Date.now()
-                    }
-                }));
-            } else {
-                res.writeHead(401);
-                res.end(JSON.stringify({
-                    success: false,
-                    error: 'Usuario o contraseña incorrectos'
-                }));
-            }
+        if (users.length === 0) {
+            res.writeHead(401);
+            res.end(JSON.stringify({
+                success: false,
+                error: 'Usuario o contraseña incorrectos'
+            }));
+            return;
         }
+
+        const user = users[0];
+        const passwordMatch = await hashHelper.verifyPassword(body.password, user.password);
+
+        if (passwordMatch) {
+            const token = 'token-' + Date.now() + '-' + Math.random().toString(36).substring(7);
+            
+            res.writeHead(200);
+            res.end(JSON.stringify({
+                success: true,
+                data: {
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        name: user.name,
+                        role: user.role
+                    },
+                    token: token
+                }
+            }));
+        } else {
+            res.writeHead(401);
+            res.end(JSON.stringify({
+                success: false,
+                error: 'Usuario o contraseña incorrectos'
+            }));
+        }
+    } catch (error) {
+        console.error('Error en login:', error);
+        res.writeHead(500);
+        res.end(JSON.stringify({
+            success: false,
+            error: 'Error en la autenticación'
+        }));
+    }
+}
 
         // Ruta para obtener productos
         else if (path === '/api/products' && req.method === 'GET') {
@@ -430,57 +443,60 @@ const server = http.createServer(async (req, res) => {
             }
         }
         
-        // Ruta para crear usuario
-        else if (path === '/api/users' && req.method === 'POST') {
-            if (!validateToken(req)) {
-                res.writeHead(401);
-                res.end(JSON.stringify({
-                    success: false,
-                    error: 'No autorizado'
-                }));
-                return;
-            }
+     // Ruta para crear usuario
+else if (path === '/api/users' && req.method === 'POST') {
+    if (!validateToken(req)) {
+        res.writeHead(401);
+        res.end(JSON.stringify({
+            success: false,
+            error: 'No autorizado'
+        })); 
+        return;
+    }
+
+    const body = await getRequestBody(req);
+    
+    if (!body.username || !body.name || !body.password || !body.role) {
+        res.writeHead(400);
+        res.end(JSON.stringify({
+            success: false,
+            error: 'Faltan campos requeridos'
+        }));
+        return;
+    }
+
+    try {
+        const hashedPassword = await hashHelper.hashPassword(body.password);
         
-            const body = await getRequestBody(req);
+        const [result] = await pool.execute(
+            'INSERT INTO users (username, name, password, role) VALUES (?, ?, ?, ?)',
+            [body.username, body.name, hashedPassword, body.role]
+        );
+        
+        res.writeHead(201);
+        res.end(JSON.stringify({
+            success: true,
+            data: {
+                id: result.insertId,
+                username: body.username,
+                name: body.name,
+                role: body.role
+            }
+        }));
+    } catch (error) {
+        console.error('Error al crear usuario:', error);
+        const statusCode = error.code === 'ER_DUP_ENTRY' ? 400 : 500;
+        const errorMessage = error.code === 'ER_DUP_ENTRY' 
+            ? 'El nombre de usuario ya existe'
+            : 'Error al crear el usuario';
             
-            if (!body.username || !body.name || !body.password || !body.role) {
-                res.writeHead(400);
-                res.end(JSON.stringify({
-                    success: false,
-                    error: 'Faltan campos requeridos'
-                }));
-                return;
-            }
-        
-            try {
-                const [result] = await pool.execute(
-                    'INSERT INTO users (username, name, password, role) VALUES (?, ?, ?, ?)',
-                    [body.username, body.name, body.password, body.role]
-                );
-                
-                res.writeHead(201);
-                res.end(JSON.stringify({
-                    success: true,
-                    data: {
-                        id: result.insertId,
-                        username: body.username,
-                        name: body.name,
-                        role: body.role
-                    }
-                }));
-            } catch (error) {
-                if (error.code === 'ER_DUP_ENTRY') {
-                    res.writeHead(400);
-                    res.end(JSON.stringify({
-                        success: false,
-                        error: 'El nombre de usuario ya existe'
-                    }));
-                    return;
-                }
-                throw error;
-            }
-        }
-        
+        res.writeHead(statusCode);
+        res.end(JSON.stringify({
+            success: false,
+            error: errorMessage
+        }));
+    }
+}
         // Ruta para actualizar usuario
         else if (path.match(/^\/api\/users\/\d+$/) && req.method === 'PUT') {
             if (!validateToken(req)) {

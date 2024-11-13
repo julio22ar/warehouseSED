@@ -1,7 +1,8 @@
-// scripts/components/Navbar.js
+import Auth from '../auth.js';
+
 class Navbar {
     constructor() {
-        this.user = JSON.parse(sessionStorage.getItem('user'));
+        this.user = Auth.getCurrentUser();
     }
 
     render() {
@@ -10,55 +11,23 @@ class Navbar {
         
         navbar.innerHTML = `
             <div class="navbar-content">
-                <div class="navbar-brand">
-                    <h1>Sistema de Inventario</h1>
-                </div>
-                <div class="navbar-menu">
-                    ${this.getMenuItems()}
-                </div>
-                <div class="navbar-user">
-                    <span class="user-name">${this.user?.name || 'Usuario'}</span>
-                    <button class="btn btn-sm btn-danger" id="logoutBtn">
-                        Cerrar Sesión
-                    </button>
+                <h1>Sistema de Inventario</h1>
+                <div class="user-info">
+                    <span>${this.user?.name || 'Usuario'}</span>
+                    <button class="btn btn-danger" id="logoutBtn">Cerrar Sesión</button>
                 </div>
             </div>
         `;
 
-        // Agregar evento de cierre de sesión
+        // Importante: Agregar el evento después de crear el elemento
         const logoutBtn = navbar.querySelector('#logoutBtn');
-        logoutBtn.addEventListener('click', () => this.handleLogout());
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                Auth.logout();
+            });
+        }
 
         return navbar;
-    }
-
-    getMenuItems() {
-        const role = this.user?.role;
-        console.log('Role in Navbar:', role); // Agregar este log
-        const menuItems = [];
-
-        // Menú base para todos los usuarios
-        menuItems.push('<a href="/pages/inventory.html" class="nav-link">Inventario</a>');
-
-        // Menú específico por rol
-        if (role === 'super_admin' || role === 'admin') {
-            menuItems.push('<a href="/pages/reports.html" class="nav-link">Reportes</a>');
-        }
-        if (role === 'super_admin' || role === 'admin') {
-            menuItems.push('<a href="/pages/reports.html" class="nav-link">Reportes</a>');
-        }
-
-        if (role === 'super_admin') {
-            console.log('Adding users link for super_admin'); // Agregar este log
-            menuItems.push('<a href="/pages/users.html" class="nav-link">Usuarios</a>');
-        }
-
-        return `<div class="nav-links">${menuItems.join('')}</div>`;
-    }
-
-    handleLogout() {
-        sessionStorage.clear();
-        window.location.href = '/pages/login.html';
     }
 }
 
