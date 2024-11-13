@@ -1,6 +1,47 @@
 const http = require('http');
+const fs = require('fs').promises;
+const path = require('path');
 const pool = require('./config/database');
 require('dotenv').config();
+
+// Mapa de tipos MIME
+const MIME_TYPES = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif'
+};
+
+// Función para obtener el tipo MIME
+function getMimeType(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    return MIME_TYPES[ext] || 'application/octet-stream';
+}
+
+// Función para servir archivos estáticos
+async function serveStaticFile(req, res) {
+    try {
+        // Obtener la ruta del archivo
+        const filePath = path.join(__dirname, '..', req.url);
+        
+        // Verificar si el archivo existe y obtener sus datos
+        const data = await fs.readFile(filePath);
+        
+        // Obtener el tipo MIME
+        const contentType = getMimeType(filePath);
+        
+        // Enviar la respuesta
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 
 // Función para validar token
 function validateToken(req) {
@@ -42,10 +83,16 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const path = url.pathname;
-
     try {
+          // Intentar servir archivo estático primero
+          if (req.url.match(/\.(css|js|png|jpg|jpeg|gif)$/)) {
+            const isServed = await serveStaticFile(req, res);
+            if (isServed) return;
+        }
+
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const path = url.pathname;
+
         // Ruta de login
         if (path === '/auth/login' && req.method === 'POST') {
             const body = await getRequestBody(req);
@@ -497,7 +544,20 @@ const server = http.createServer(async (req, res) => {
                 throw error;
             }
         }
-        
+        else if (req.url.endsWith('.css')) {
+            try {
+                // Construir la ruta del archivo CSS
+                const cssPath = path.join(__dirname, '..', req.url);
+                const cssContent = await require('fs').promises.readFile(cssPath, 'utf8');
+                
+                res.writeHead(200, { 'Content-Type': 'text/css' });
+                res.end(cssContent);
+            } catch (error) {
+                console.error('Error loading CSS:', error);
+                res.writeHead(404);
+                res.end();
+            }
+        }
         // Ruta para eliminar usuario
         else if (path.match(/^\/api\/users\/\d+$/) && req.method === 'DELETE') {
             if (!validateToken(req)) {
