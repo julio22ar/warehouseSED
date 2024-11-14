@@ -93,9 +93,14 @@ class InventoryPage {
         }
 
         // Modal de producto
-        document.querySelector('.modal-close')?.addEventListener('click', () => this.closeModal());
+         // Para el modal de eliminar
+    document.querySelectorAll('.modal-close').forEach(button => {
+        button.addEventListener('click', () => this.closeModal());
+    });
         document.getElementById('saveProductBtn')?.addEventListener('click', () => this.handleSaveProduct());
-        document.getElementById('cancelProductBtn')?.addEventListener('click', () => this.closeModal());
+        document.querySelectorAll('.cancelProductBtn').forEach(button => {
+            button.addEventListener('click', () => this.closeModal());
+        });
 
         // Modal de eliminación
         document.getElementById('confirmDeleteBtn')?.addEventListener('click', () => this.confirmDelete());
@@ -213,20 +218,26 @@ class InventoryPage {
 
     // Modal handlers
     openAddModal() {
+        console.log('Opening add modal');
         if (!Auth.hasPermission('ADD_PRODUCT')) {
             this.showError('No tiene permisos para agregar productos');
             return;
         }
-
+    
         this.currentProductId = null;
         const modalTitle = document.getElementById('modalTitle');
         if (modalTitle) modalTitle.textContent = 'Agregar Producto';
-
+    
         const form = document.getElementById('productForm');
         if (form) form.reset();
-
+    
         const modal = document.getElementById('productModal');
-        if (modal) modal.style.display = 'block';
+        if (modal) {
+            modal.style.display = 'block'; // Cambiado de classList.add('show')
+            console.log('Modal displayed');
+        } else {
+            console.log('Modal element not found');
+        }
     }
 
     async openEditModal(productId) {
@@ -302,7 +313,11 @@ class InventoryPage {
 
     closeModal() {
         const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => modal.style.display = 'none');
+        modals.forEach(modal => {
+            modal.style.display = 'none';
+        });
+        const form = document.getElementById('productForm');
+        if (form) form.reset();
         this.currentProductId = null;
     }
 
@@ -572,18 +587,22 @@ class InventoryPage {
         this.renderPagination();
     }
 }
+let inventoryPageInstance;
 
 // Inicializar la página
+// Inicializar la página
 document.addEventListener('DOMContentLoaded', () => {
-    window.inventoryPage = new InventoryPage();
+    inventoryPageInstance = new InventoryPage();
+    
+    // Exponer los métodos necesarios globalmente
+    window.inventoryPage = {
+        openViewModal: (id) => inventoryPageInstance.openViewModal(id),
+        openEditModal: (id) => inventoryPageInstance.openEditModal(id),
+        openDeleteModal: (id) => inventoryPageInstance.openDeleteModal(id),
+        changePage: (page) => inventoryPageInstance.changePage(page),
+        openAddModal: () => inventoryPageInstance.openAddModal(),
+        closeModal: () => inventoryPageInstance.closeModal()
+    };
 });
-
-// Hacer métodos disponibles globalmente para los botones de acción
-window.inventoryPage = {
-    openViewModal: (id) => window.inventoryPage.openViewModal(id),
-    openEditModal: (id) => window.inventoryPage.openEditModal(id),
-    openDeleteModal: (id) => window.inventoryPage.openDeleteModal(id),
-    changePage: (page) => window.inventoryPage.changePage(page)
-};
 
 export default InventoryPage;

@@ -1,31 +1,30 @@
- <!-- pages/users.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios - Sistema de Inventario</title>
- <link rel="stylesheet" href="../styles/styles.css">
- <link rel="stylesheet" href="../styles/components/navbar.css">
- <link rel="stylesheet" href="../styles/components/sidebar.css">
- <link rel="stylesheet" href="../styles/components/tables.css">
- <link rel="stylesheet" href="../styles/components/forms.css">
- <link rel="stylesheet" href="../styles/components/buttons.css">
- <link rel="stylesheet" href="../styles/components/modal.css">
- <link rel="stylesheet" href="../styles/pages/users.css">
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../styles/components/navbar.css">
+    <link rel="stylesheet" href="../styles/components/sidebar.css">
+    <link rel="stylesheet" href="../styles/components/tables.css">
+    <link rel="stylesheet" href="../styles/components/modal.css">
+    <link rel="stylesheet" href="../styles/components/buttons.css">
+    <link rel="stylesheet" href="../styles/pages/users.css">
 </head>
 <body>
+    <!-- Navbar -->
     <nav class="navbar">
-        <div class="navbar-content">    
+        <div class="navbar-content">
             <h1>Sistema de Inventario</h1>
             <div class="user-info">
-                <span id="userName">Administrador</span>
-                <button class="btn btn-danger">Cerrar Sesión</button>
+                <span id="userName">SuperAdministrador</span>
+                <button id="logoutBtn" class="btn btn-danger">Cerrar Sesión</button>
             </div>
         </div>
     </nav>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="menu">
             <h3>Menú Principal</h3>
@@ -37,11 +36,12 @@
         </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="main-content">
         <div class="page-header">
             <h2>Gestión de Usuarios</h2>
-            <button class="btn btn-primary" id="addUserBtn">
-                <span class="btn-icon">➕</span> Agregar Usuario
+            <button id="addUserBtn" class="btn btn-primary">
+                <span>➕</span> Agregar Usuario
             </button>
         </div>
 
@@ -51,7 +51,7 @@
             </div>
             <div class="filters">
                 <select id="roleFilter">
-                    <option value="">Todos los roles</option>
+                    <option value="all">Todos los roles</option>
                     <option value="super_admin">Super Admin</option>
                     <option value="admin">Admin</option>
                     <option value="user">Usuario</option>
@@ -72,16 +72,16 @@
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <!-- Los usuarios se cargarán dinámicamente -->
+                    <!-- Se llenará dinámicamente -->
                 </tbody>
             </table>
             <div id="pagination" class="pagination">
-                <!-- La paginación se generará dinámicamente -->
+                <!-- Se llenará dinámicamente -->
             </div>
         </div>
     </main>
 
-    <!-- Modal para Agregar/Editar Usuario -->
+    <!-- Modal -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -91,20 +91,23 @@
             <div class="modal-body">
                 <form id="userForm">
                     <div class="form-group">
-                        <label for="username">Nombre de Usuario</label>
-                        <input type="text" id="username" name="username" required>
+                        <label class="form-label" for="username">Nombre de Usuario</label>
+                        <input type="text" id="username" name="username" class="form-control" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="name">Nombre Completo</label>
-                        <input type="text" id="name" name="name" required>
+                        <label class="form-label" for="name">Nombre Completo</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="password">Contraseña</label>
-                        <input type="password" id="password" name="password" required>
+                        <label class="form-label" for="password">Contraseña</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="role">Rol</label>
-                        <select id="role" name="role" required>
+                        <label class="form-label" for="role">Rol</label>
+                        <select id="role" name="role" class="form-control" required>
                             <option value="user">Usuario</option>
                             <option value="admin">Admin</option>
                             <option value="super_admin">Super Admin</option>
@@ -113,8 +116,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button class="btn btn-primary" id="saveUserBtn">Guardar</button>
+                <button type="button" id="cancelBtn" class="btn btn-secondary">Cancelar</button>
+                <button type="button" id="saveUserBtn" class="btn btn-primary">Guardar</button>
             </div>
         </div>
     </div>

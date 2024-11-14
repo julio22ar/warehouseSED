@@ -15,7 +15,6 @@ class UsersPage {
     async init() {
         console.log('Starting users page initialization');
         
-        // Verificar autenticación
         if (!Auth.isAuthenticated()) {
             window.location.href = '/pages/login.html';
             return;
@@ -24,7 +23,6 @@ class UsersPage {
         const user = Auth.getCurrentUser();
         console.log('Current user role:', user?.role);
 
-        // Verificar permisos usando MANAGE_USERS
         if (!Auth.hasPermission('MANAGE_USERS')) {
             console.log('User does not have MANAGE_USERS permission');
             Auth.redirectToDefaultRoute();
@@ -32,14 +30,8 @@ class UsersPage {
         }
 
         console.log('User has permission, continuing initialization');
-
-        // Actualizar nombre de usuario
         document.getElementById('userName').textContent = user.name;
-
-        // Setup event listeners
         this.setupEventListeners();
-
-        // Cargar datos iniciales
         await this.loadUsers();
     }
 
@@ -50,10 +42,27 @@ class UsersPage {
         // Filtro de rol
         document.getElementById('roleFilter')?.addEventListener('change', () => this.handleSearch());
         
-        // Modal
-        document.getElementById('addUserBtn')?.addEventListener('click', () => this.openAddModal());
-        document.getElementById('saveUserBtn')?.addEventListener('click', () => this.handleSaveUser());
-        document.querySelector('.modal-close')?.addEventListener('click', () => this.closeModal());
+        // Modal y botones relacionados
+        const addUserBtn = document.getElementById('addUserBtn');
+        if (addUserBtn) {
+            addUserBtn.addEventListener('click', () => this.openAddModal());
+        }
+    
+        const saveUserBtn = document.getElementById('saveUserBtn');
+        if (saveUserBtn) {
+            saveUserBtn.addEventListener('click', () => this.handleSaveUser());
+        }
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.closeModal());
+        }
+        const closeBtn = document.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeModal());
+        }
+        
+        // Cerrar sesión
+        document.getElementById('logoutBtn')?.addEventListener('click', () => Auth.logout());
         
         // Configurar botones de acción globales
         window.editUser = (id) => this.openEditModal(this.users.find(u => u.id === id));
@@ -89,6 +98,23 @@ class UsersPage {
             console.error('Error loading users:', error);
             this.showError('Error al cargar usuarios');
         }
+    }
+
+    handleSearch() {
+        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const roleFilter = document.getElementById('roleFilter')?.value || 'all';
+        
+        this.filteredUsers = this.users.filter(user => {
+            const matchesSearch = user.username.toLowerCase().includes(searchTerm) || 
+                                user.name.toLowerCase().includes(searchTerm);
+            const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+            
+            return matchesSearch && matchesRole;
+        });
+        
+        this.currentPage = 1;
+        this.renderUsers();
+        this.renderPagination();
     }
 
     async handleSaveUser() {
@@ -209,15 +235,22 @@ class UsersPage {
     }
 
     showModal() {
-        document.getElementById('userModal').classList.add('show');
+        const modal = document.getElementById('userModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Opcional: evita el scroll
+        }
     }
-
+    
     closeModal() {
-        document.getElementById('userModal').classList.remove('show');
-        document.getElementById('userForm').reset();
+        const modal = document.getElementById('userModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = ''; // Opcional: restaura el scroll
+            document.getElementById('userForm').reset();
+        }
     }
 
-    // Métodos auxiliares
     escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str;
@@ -234,11 +267,58 @@ class UsersPage {
     }
 
     showError(message) {
-        alert(message); // Reemplazar con un sistema de notificaciones mejor
+        alert(message);
     }
 
     showSuccess(message) {
-        alert(message); // Reemplazar con un sistema de notificaciones mejor
+        alert(message);
+    }
+
+    renderPagination() {
+        const totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+        const paginationContainer = document.getElementById('pagination');
+        
+        if (!paginationContainer) return;
+        
+        let paginationHTML = '';
+        
+        paginationHTML += `
+            <button class="btn btn-pagination" 
+                    onclick="window.usersPage.changePage(${this.currentPage - 1})" 
+                    ${this.currentPage === 1 ? 'disabled' : ''}>
+                Anterior
+            </button>
+        `;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHTML += `
+                <button class="btn btn-pagination ${this.currentPage === i ? 'active' : ''}" 
+                        onclick="window.usersPage.changePage(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+        
+        paginationHTML += `
+            <button class="btn btn-pagination" 
+                    onclick="window.usersPage.changePage(${this.currentPage + 1})" 
+                    ${this.currentPage === totalPages ? 'disabled' : ''}>
+                Siguiente
+            </button>
+        `;
+        
+        paginationContainer.innerHTML = paginationHTML;
+    }
+
+    changePage(page) {
+        const totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+        
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+        
+        this.currentPage = page;
+        this.renderUsers();
+        this.renderPagination();
     }
 }
 

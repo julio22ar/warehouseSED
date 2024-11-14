@@ -14,15 +14,15 @@ export const PERMISSIONS = {
     SEARCH_PRODUCTS: ['user', 'admin', 'super_admin'],
     ADD_PRODUCT: ['admin', 'super_admin'],
     EDIT_PRODUCT: ['admin', 'super_admin'],
-    DELETE_PRODUCT: ['super_admin'],
+    DELETE_PRODUCT: ['admin','super_admin'],
     
     // Permisos de usuarios
     VIEW_USERS: ['super_admin'],
     MANAGE_USERS: ['super_admin'],
     
     // Permisos de reportes
-    VIEW_REPORTS: ['admin', 'super_admin'],
-    EXPORT_REPORTS: ['admin', 'super_admin']
+    VIEW_REPORTS: [ 'super_admin'],
+    EXPORT_REPORTS: [ 'super_admin']
 };
 
 export const ROUTES = {
